@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OnLIB</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+<div class="min-h-screen flex flex-col lg:flex-row">
+
+  <!-- SIDEBAR -->
+  <aside class="w-full lg:w-[300px] lg:h-screen lg:sticky top-0 border-r border-white/5 panel p-6 flex flex-col gap-6">
+
+    <div>
+      <h1 class="text-3xl font-bold tracking-tight">
+        On<span class="text-pink-300">LIB</span>
+      </h1>
+      <p class="text-xs uppercase tracking-widest text-zinc-500 mt-2">
+        Personal Library
+      </p>
+    </div>
+
+    <div class="card p-4 rounded-2xl">
+      <div class="flex gap-4 items-center">
+
+        <div class="relative w-20 h-20 rounded-2xl overflow-hidden border border-white/10 shrink-0">
+          <img id="pfpImg" class="w-full h-full object-cover"/>
+          <input type="file" class="absolute inset-0 opacity-0 cursor-pointer" onchange="uploadPFP(this)" />
+        </div>
+
+        <div class="flex-1 min-w-0">
+          <input id="userName" onchange="saveProfile()" class="w-full bg-transparent text-lg font-bold outline-none"/>
+          <textarea id="userBio" onchange="saveProfile()" class="w-full bg-transparent text-sm text-zinc-500 resize-none outline-none mt-2 h-12"></textarea>
+        </div>
+
+      </div>
+    </div>
+
+    <nav class="space-y-2 flex-1">
+
+      <button onclick="setFolder('All')" class="button-secondary w-full px-4 py-3 rounded-xl text-sm">📚 Library</button>
+      <button onclick="setFolder('Reading')" class="button-secondary w-full px-4 py-3 rounded-xl text-sm">📖 Reading</button>
+      <button onclick="setFolder('Finished')" class="button-secondary w-full px-4 py-3 rounded-xl text-sm">🗂 Archived</button>
+
+      <button onclick="rollRandom()" class="button-primary w-full px-4 py-3 rounded-xl text-sm mt-4">
+        ✨ Random Book
+      </button>
+
+    </nav>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="flex-1 p-5 lg:p-10">
+
+    <div class="max-w-7xl mx-auto">
+
+      <div class="mb-10 flex flex-col sm:flex-row gap-3">
+        <input id="searchInput" onkeypress="if(event.key==='Enter')searchBooks()" class="input flex-1 px-5 py-4 rounded-2xl"/>
+        <button onclick="searchBooks()" class="button-primary px-8 py-4 rounded-2xl">Search</button>
+      </div>
+
+      <section id="searchSection" class="hidden mb-12">
+        <div id="searchResults" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-5"></div>
+      </section>
+
+      <h2 id="folderTitle" class="text-4xl font-bold">Library</h2>
+
+      <div id="libraryGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5"></div>
+
+    </div>
+
+  </main>
+
+</div>
+
+<!-- MODAL -->
+<div id="bookModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4">
+  <!-- (keep your modal exactly as-is) -->
+</div>
+
+<div id="toast" class="fixed bottom-5 right-5 bg-pink-300 text-black px-6 py-4 rounded-2xl font-semibold opacity-0 transition-all z-50"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
