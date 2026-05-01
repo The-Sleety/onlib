@@ -225,6 +225,16 @@
       </div>
     </div>
 
+    <!-- Sync Code -->
+    <div class="card rounded-xl p-3">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-xs uppercase tracking-widest" style="color:var(--muted)">Sync Code</p>
+        <button onclick="copySyncCode()" id="sidebarCopyBtn" class="btn-ghost text-xs px-2 py-1 rounded-lg">Copy</button>
+      </div>
+      <p id="syncCodeDisplay" class="font-mono text-xs break-all leading-relaxed" style="color:var(--pink)">—</p>
+      <p class="text-xs mt-1.5" style="color:var(--muted)">Use this code on other devices to access the same library.</p>
+    </div>
+
     <!-- Nav -->
     <nav class="space-y-1.5 flex-1">
       <button onclick="setFolder('All')"      data-folder="All"      class="nav-btn btn-ghost w-full text-left px-4 py-3 rounded-xl text-sm active">📚 Library</button>
@@ -403,6 +413,26 @@
       project. Your data is stored in your own database — OnLIB never sees it.
     </p>
 
+    <!-- Sync Code -->
+    <div class="card rounded-2xl p-4 mb-5">
+      <p class="text-xs font-semibold mb-1" style="color:var(--text)">🔑 Sync Code</p>
+      <p class="text-xs mb-3 leading-relaxed" style="color:var(--muted)">
+        Your sync code is your shared identity across devices. Enter the <strong style="color:var(--text)">same code</strong> on every device to share one library. Anyone who knows your code <em>and</em> your Supabase credentials can access your data — keep it private.
+      </p>
+      <div class="flex gap-2">
+        <input
+          type="text"
+          id="syncCodeInput"
+          placeholder="e.g. maya-books-2025"
+          class="input flex-1 rounded-xl px-3 py-2.5 text-sm font-mono"
+          autocomplete="off" autocorrect="off" spellcheck="false"
+        />
+        <button onclick="applySyncCode()" class="btn-primary px-4 py-2.5 rounded-xl text-xs">Apply</button>
+        <button onclick="copySyncCode()" id="copyCodeBtn" class="btn-ghost px-3 py-2.5 rounded-xl text-xs">Copy</button>
+      </div>
+      <p id="syncCodeMsg" class="text-xs mt-2" style="color:var(--muted);min-height:1em"></p>
+    </div>
+
     <!-- SQL instructions -->
     <div class="card rounded-2xl p-4 mb-5">
       <div class="flex items-center justify-between mb-2">
@@ -481,13 +511,14 @@ let currentFolder  = 'All';
 let sbClient       = null;
 let toastTimer     = null;
 
-// Stable anonymous user ID (no auth required)
-let userId = localStorage.getItem('onlib_uid');
+// Sync code = the shared user identity across devices.
+// Falls back to a random UUID if user hasn't set one yet.
+let userId = localStorage.getItem('onlib_sync_code');
 if (!userId) {
   userId = (typeof crypto !== 'undefined' && crypto.randomUUID)
     ? crypto.randomUUID()
-    : 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-  localStorage.setItem('onlib_uid', userId);
+    : 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+  localStorage.setItem('onlib_sync_code', userId);
 }
 
 // ─── Boot ───────────────────────────────────────────────────────────────────
@@ -726,6 +757,9 @@ function openSupabaseModal() {
     document.getElementById('sbUrl').value = url;
     document.getElementById('sbKey').value = key;
   }
+  // Populate the sync code field with current code
+  document.getElementById('syncCodeInput').value = userId;
+  document.getElementById('syncCodeMsg').textContent = '';
   document.getElementById('sbStatus').textContent = '';
   showModal('supabaseModal');
 }
@@ -739,6 +773,52 @@ function copySql() {
     btn.textContent = 'Copied!';
     setTimeout(() => btn.textContent = 'Copy', 1800);
   });
+}
+
+function copySyncCode() {
+  navigator.clipboard?.writeText(userId).then(() => {
+    ['sidebarCopyBtn','copyCodeBtn'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1800); }
+    });
+  });
+}
+
+async function applySyncCode() {
+  const raw = document.getElementById('syncCodeInput').value.trim();
+  const msg = document.getElementById('syncCodeMsg');
+
+  if (!raw) { msg.textContent = 'Please enter a sync code.'; msg.style.color = '#f87171'; return; }
+  if (raw === userId) { msg.textContent = 'Already using this code.'; msg.style.color = 'var(--muted)'; return; }
+
+  const confirmed = confirm(
+    `Switch to sync code "${raw}"?\n\nThis will load the library linked to that code. Your current local books will be replaced by whatever is stored under the new code in Supabase.\n\nMake sure Supabase is connected first.`
+  );
+  if (!confirmed) return;
+
+  // Apply new code
+  userId = raw;
+  localStorage.setItem('onlib_sync_code', userId);
+  updateSyncCodeDisplay();
+
+  msg.style.color = 'var(--green)';
+
+  if (sbClient) {
+    msg.textContent = 'Switching library… pulling from Supabase.';
+    // Clear local and pull fresh
+    myLibrary = [];
+    saveLocal();
+    await pullFromSupabase();
+    msg.textContent = '✓ Switched! Library loaded for this code.';
+    setTimeout(closeSupabaseModal, 1600);
+  } else {
+    msg.textContent = '✓ Code set. Connect Supabase below to sync.';
+  }
+}
+
+function updateSyncCodeDisplay() {
+  const el = document.getElementById('syncCodeDisplay');
+  if (el) el.textContent = userId;
 }
 
 // ─── Search ──────────────────────────────────────────────────────────────────
@@ -1092,6 +1172,7 @@ document.addEventListener('keydown', e => {
 
 // ─── Boot ────────────────────────────────────────────────────────────────────
 init();
+updateSyncCodeDisplay();
 </script>
 </body>
 </html>
