@@ -6,898 +6,1092 @@
   <title>OnLIB</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-    :root{
-      --bg:#0f0a12;
-      --surface:#18121d;
-      --surface-2:#211927;
-      --border:rgba(255,255,255,0.06);
-      --text:#f8f4fa;
-      --muted:#a78faa;
-      --pink:#ff8dc7;
+    :root {
+      --bg:       #0c0810;
+      --surface:  #150f1a;
+      --surface2: #1d1524;
+      --border:   rgba(255,255,255,0.055);
+      --text:     #f5f0f8;
+      --muted:    #8a6f90;
+      --pink:     #f97cc4;
+      --pink-dim: rgba(249,124,196,0.15);
       --pink-soft:#ffc2df;
+      --green:    #5ef0b0;
     }
 
-    *{
-      box-sizing:border-box;
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+      min-height: 100vh;
     }
 
-    body{
-      margin:0;
-      font-family:'Inter',sans-serif;
-      background:var(--bg);
-      color:var(--text);
-      overflow-x:hidden;
-    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2e1f38; border-radius: 99px; }
 
-    ::-webkit-scrollbar{
-      width:6px;
-    }
+    /* Utility classes */
+    .panel  { background: var(--surface);  border: 1px solid var(--border); }
+    .card   { background: var(--surface2); border: 1px solid rgba(255,255,255,0.04); transition: border-color 0.2s; }
+    .card:hover { border-color: rgba(249,124,196,0.3); }
 
-    ::-webkit-scrollbar-thumb{
-      background:#33263b;
-      border-radius:999px;
+    .input {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      outline: none;
+      font-family: 'DM Sans', sans-serif;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-
-    .panel{
-      background:var(--surface);
-      border:1px solid var(--border);
+    .input:focus {
+      border-color: rgba(249,124,196,0.45);
+      box-shadow: 0 0 0 3px rgba(249,124,196,0.08);
     }
+    .input::placeholder { color: var(--muted); }
 
-    .card{
-      background:var(--surface-2);
-      border:1px solid rgba(255,255,255,0.05);
-      transition:0.18s ease;
+    .btn-primary {
+      background: var(--pink);
+      color: #1a0a22;
+      font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+      transition: background 0.2s, transform 0.1s;
+      cursor: pointer;
     }
+    .btn-primary:hover  { background: var(--pink-soft); }
+    .btn-primary:active { transform: scale(0.98); }
 
-    .card:hover{
-      border-color:rgba(255,141,199,0.35);
+    .btn-ghost {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      font-family: 'DM Sans', sans-serif;
+      transition: border-color 0.2s, background 0.2s;
+      cursor: pointer;
     }
+    .btn-ghost:hover { border-color: rgba(249,124,196,0.35); background: #241829; }
 
-    .input{
-      background:#130f17;
-      border:1px solid rgba(255,255,255,0.06);
-      color:var(--text);
-      outline:none;
-      transition:0.18s ease;
+    /* Star rating — RTL trick for CSS-only hover */
+    .star-rating { direction: rtl; display: inline-flex; gap: 6px; }
+    .star-rating input { display: none; }
+    .star-rating label {
+      color: #3a2445;
+      font-size: 1.6rem;
+      cursor: pointer;
+      transition: color 0.15s, transform 0.15s;
+      line-height: 1;
     }
-
-    .input:focus{
-      border-color:rgba(255,141,199,0.4);
-    }
-
-    .button-primary{
-      background:var(--pink);
-      color:black;
-      font-weight:700;
-      transition:0.18s ease;
-    }
-
-    .button-primary:hover{
-      background:var(--pink-soft);
-    }
-
-    .button-secondary{
-      background:var(--surface-2);
-      border:1px solid rgba(255,255,255,0.06);
-      transition:0.18s ease;
-    }
-
-    .button-secondary:hover{
-      border-color:rgba(255,141,199,0.35);
-      background:#2a1f31;
-    }
-
-    .star-rating{
-      direction:rtl;
-      display:inline-flex;
-      gap:4px;
-    }
-
-    .star-rating input{
-      display:none;
-    }
-
-    .star-rating label{
-      color:#433047;
-      font-size:1.5rem;
-      cursor:pointer;
-      transition:0.2s;
-    }
-
     .star-rating label:hover,
     .star-rating label:hover ~ label,
-    .star-rating input:checked ~ label{
-      color:var(--pink);
+    .star-rating input:checked ~ label { color: var(--pink); }
+    .star-rating label:hover { transform: scale(1.15); }
+
+    /* Book cover overlay */
+    .cover-overlay {
+      background: linear-gradient(to top, rgba(12,8,16,0.9) 0%, transparent 55%);
     }
 
-    .overlay{
-      background:linear-gradient(to top, rgba(0,0,0,0.85), transparent 60%);
+    /* Sync indicator */
+    .sync-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
     }
+    .sync-dot.connected    { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .sync-dot.disconnected { background: var(--muted); }
+    .sync-dot.syncing      { background: #fbbf24; animation: blink 0.8s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* Nav active state */
+    .nav-btn.active {
+      background: var(--pink-dim) !important;
+      border-color: rgba(249,124,196,0.4) !important;
+      color: var(--pink) !important;
+    }
+
+    /* Fancy serif title font */
+    .serif { font-family: 'DM Serif Display', serif; }
+
+    /* Toast */
+    #toast {
+      pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+    }
+
+    /* Skeleton shimmer */
+    @keyframes shimmer {
+      0%   { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface2) 25%, #271d30 50%, var(--surface2) 75%);
+      background-size: 800px 100%;
+      animation: shimmer 1.4s infinite linear;
+      border-radius: 12px;
+    }
+
+    /* SQL pre block */
+    #sqlBlock {
+      font-family: 'Courier New', monospace;
+      font-size: 0.72rem;
+      line-height: 1.6;
+      overflow-x: auto;
+      white-space: pre;
+      color: #c8a8d8;
+    }
+
+    /* Scrollable modal body */
+    .modal-body { overflow-y: auto; max-height: calc(95vh - 0px); }
   </style>
 </head>
-
 <body>
 
+<!-- ====================================================
+     LAYOUT
+===================================================== -->
 <div class="min-h-screen flex flex-col lg:flex-row">
 
-  <!-- SIDEBAR -->
-  <aside class="w-full lg:w-[300px] lg:h-screen lg:sticky top-0 border-r border-white/5 panel p-6 flex flex-col gap-6">
+  <!-- ================================================
+       SIDEBAR
+  ================================================= -->
+  <aside class="w-full lg:w-[280px] lg:h-screen lg:sticky top-0 panel border-r flex flex-col gap-5 p-5 overflow-y-auto">
 
-    <div>
-      <h1 class="text-3xl font-bold tracking-tight">
-        On<span class="text-pink-300">LIB</span>
-      </h1>
-
-      <p class="text-xs uppercase tracking-widest text-zinc-500 mt-2">
-        Personal Library
-      </p>
+    <!-- Branding -->
+    <div class="flex items-start justify-between pt-1">
+      <div>
+        <h1 class="serif text-3xl font-bold tracking-tight leading-none">
+          On<span style="color:var(--pink)">LIB</span>
+        </h1>
+        <p class="text-xs tracking-widest text-zinc-600 mt-1.5 uppercase">Personal Library</p>
+      </div>
+      <button
+        onclick="openSupabaseModal()"
+        title="Sync settings"
+        class="btn-ghost flex items-center gap-2 px-3 py-2 rounded-xl text-xs mt-1"
+      >
+        <span id="syncDot" class="sync-dot disconnected"></span>
+        <span id="syncLabel">Sync</span>
+      </button>
     </div>
 
-    <!-- PROFILE -->
-    <div class="card p-4 rounded-2xl">
-
-      <div class="flex gap-4 items-center">
-
-        <div class="relative w-20 h-20 rounded-2xl overflow-hidden border border-white/10 shrink-0">
-
-          <img
-            id="pfpImg"
-            src="https://api.dicebear.com/7.x/shapes/svg?seed=OnLib"
-            class="w-full h-full object-cover"
-          />
-
-          <input
-            type="file"
-            class="absolute inset-0 opacity-0 cursor-pointer"
-            onchange="uploadPFP(this)"
-          />
-
+    <!-- Profile -->
+    <div class="card rounded-2xl p-4">
+      <div class="flex gap-3 items-start">
+        <div class="relative w-16 h-16 rounded-xl overflow-hidden border border-white/10 shrink-0 group">
+          <img id="pfpImg" src="https://api.dicebear.com/7.x/shapes/svg?seed=OnLib" class="w-full h-full object-cover"/>
+          <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+            <span class="text-xs">📷</span>
+          </div>
+          <input type="file" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer z-10" onchange="uploadPFP(this)" title="Upload photo"/>
         </div>
-
         <div class="flex-1 min-w-0">
-
           <input
             type="text"
             id="userName"
             placeholder="Your Name"
-            onchange="saveProfile()"
-            class="w-full bg-transparent text-lg font-bold outline-none"
+            oninput="saveProfile()"
+            class="w-full bg-transparent text-base font-bold outline-none truncate"
           />
-
           <textarea
             id="userBio"
-            placeholder="Add a short bio..."
-            onchange="saveProfile()"
-            class="w-full bg-transparent text-sm text-zinc-500 resize-none outline-none mt-2 h-12"
+            placeholder="Short bio..."
+            oninput="saveProfile()"
+            class="w-full bg-transparent text-xs resize-none outline-none mt-1 h-10 leading-relaxed"
+            style="color:var(--muted)"
           ></textarea>
-
         </div>
-
       </div>
-
     </div>
 
-    <!-- NAV -->
-    <nav class="space-y-2 flex-1">
+    <!-- Stats -->
+    <div class="grid grid-cols-3 gap-2">
+      <div class="card rounded-xl p-3 text-center">
+        <p id="statTotal" class="text-xl font-bold" style="color:var(--pink)">0</p>
+        <p class="text-xs mt-0.5" style="color:var(--muted)">Total</p>
+      </div>
+      <div class="card rounded-xl p-3 text-center">
+        <p id="statReading" class="text-xl font-bold" style="color:var(--pink)">0</p>
+        <p class="text-xs mt-0.5" style="color:var(--muted)">Reading</p>
+      </div>
+      <div class="card rounded-xl p-3 text-center">
+        <p id="statDone" class="text-xl font-bold" style="color:var(--pink)">0</p>
+        <p class="text-xs mt-0.5" style="color:var(--muted)">Done</p>
+      </div>
+    </div>
 
-      <button
-        onclick="setFolder('All')"
-        class="button-secondary w-full text-left px-4 py-3 rounded-xl text-sm"
-      >
-        📚 Library
-      </button>
-
-      <button
-        onclick="setFolder('Reading')"
-        class="button-secondary w-full text-left px-4 py-3 rounded-xl text-sm"
-      >
-        📖 Reading
-      </button>
-
-      <button
-        onclick="setFolder('Finished')"
-        class="button-secondary w-full text-left px-4 py-3 rounded-xl text-sm"
-      >
-        🗂 Archived
-      </button>
-
-      <button
-        onclick="rollRandom()"
-        class="button-primary w-full text-left px-4 py-3 rounded-xl text-sm mt-4"
-      >
-        ✨ Random Book
-      </button>
-
+    <!-- Nav -->
+    <nav class="space-y-1.5 flex-1">
+      <button onclick="setFolder('All')"      data-folder="All"      class="nav-btn btn-ghost w-full text-left px-4 py-3 rounded-xl text-sm active">📚 Library</button>
+      <button onclick="setFolder('Reading')"  data-folder="Reading"  class="nav-btn btn-ghost w-full text-left px-4 py-3 rounded-xl text-sm">📖 Reading</button>
+      <button onclick="setFolder('Finished')" data-folder="Finished" class="nav-btn btn-ghost w-full text-left px-4 py-3 rounded-xl text-sm">🗂 Archived</button>
+      <button onclick="setFolder('Wishlist')" data-folder="Wishlist" class="nav-btn btn-ghost w-full text-left px-4 py-3 rounded-xl text-sm">💫 Wishlist</button>
+      <button onclick="rollRandom()" class="btn-primary w-full text-left px-4 py-3 rounded-xl text-sm mt-3">✨ Random Book</button>
     </nav>
 
+    <p class="text-xs text-zinc-700 text-center pb-1">OnLIB · Built with OpenLibrary</p>
   </aside>
 
-  <!-- MAIN -->
-  <main class="flex-1 p-5 lg:p-10">
+  <!-- ================================================
+       MAIN
+  ================================================= -->
+  <main class="flex-1 p-5 lg:p-10 min-w-0">
+    <div class="max-w-6xl mx-auto">
 
-    <div class="max-w-7xl mx-auto">
-
-      <!-- SEARCH -->
-      <div class="mb-10 flex flex-col sm:flex-row gap-3">
-
+      <!-- Search bar -->
+      <div class="mb-8 flex flex-col sm:flex-row gap-3">
         <input
           type="text"
           id="searchInput"
-          placeholder="Search books..."
+          placeholder="Search books to add to your library…"
           onkeypress="if(event.key==='Enter')searchBooks()"
-          class="input flex-1 px-5 py-4 rounded-2xl"
+          class="input flex-1 px-5 py-4 rounded-2xl text-sm"
         />
-
-        <button
-          onclick="searchBooks()"
-          class="button-primary px-8 py-4 rounded-2xl"
-        >
-          Search
-        </button>
-
+        <button onclick="searchBooks()" class="btn-primary px-8 py-4 rounded-2xl text-sm">Search</button>
       </div>
 
-      <!-- SEARCH RESULTS -->
-      <section id="searchSection" class="hidden mb-12">
-
-        <div class="flex items-center justify-between mb-5">
-
-          <h2 class="text-2xl font-bold">
-            Search Results
-          </h2>
-
-          <span class="text-xs uppercase tracking-widest text-zinc-500">
-            Results
-          </span>
-
+      <!-- Search results -->
+      <section id="searchSection" class="hidden mb-10">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="serif text-2xl">Search Results</h2>
+          <button
+            onclick="document.getElementById('searchSection').classList.add('hidden')"
+            class="text-xs btn-ghost px-3 py-1.5 rounded-lg"
+            style="color:var(--muted)"
+          >✕ Close</button>
         </div>
-
-        <div
-          id="searchResults"
-          class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-5"
-        ></div>
-
+        <div id="searchResults" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4"></div>
       </section>
 
-      <!-- HEADER -->
-      <div class="flex items-end justify-between mb-8">
-
+      <!-- Library header -->
+      <div class="flex items-end justify-between mb-6">
         <div>
-
-          <h2
-            id="folderTitle"
-            class="text-4xl font-bold tracking-tight"
-          >
-            Library
-          </h2>
-
-          <p class="text-zinc-500 mt-2">
-            Your personal book collection.
-          </p>
-
+          <h2 id="folderTitle" class="serif text-4xl font-bold tracking-tight">Library</h2>
+          <p id="folderSubtitle" class="text-sm mt-1" style="color:var(--muted)">Your personal book collection.</p>
         </div>
-
-        <span class="text-xs uppercase tracking-widest text-zinc-600">
-          ONLIB
-        </span>
-
+        <select id="sortSelect" onchange="renderLibrary()" class="input text-xs rounded-xl px-3 py-2">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="title">Title A–Z</option>
+          <option value="rating">Highest rated</option>
+        </select>
       </div>
 
-      <!-- LIBRARY -->
-      <div
-        id="libraryGrid"
-        class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5"
-      ></div>
+      <!-- Library grid -->
+      <div id="libraryGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
 
     </div>
-
   </main>
-
 </div>
 
-<!-- MODAL -->
+
+<!-- ====================================================
+     BOOK MODAL
+===================================================== -->
 <div
   id="bookModal"
-  class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4"
+  class="fixed inset-0 bg-black/75 backdrop-blur-md hidden items-center justify-center z-50 p-4"
 >
+  <div class="w-full max-w-5xl max-h-[95vh] card rounded-3xl flex flex-col lg:flex-row overflow-hidden">
 
-  <div class="w-full max-w-6xl max-h-[95vh] overflow-hidden rounded-3xl card flex flex-col lg:flex-row">
-
-    <!-- COVER -->
-    <div class="lg:w-[340px] bg-black shrink-0">
-
-      <img
-        id="modalCover"
-        class="w-full h-[300px] lg:h-full object-cover"
-      />
-
+    <!-- Cover pane -->
+    <div class="lg:w-[300px] bg-black shrink-0 relative">
+      <img id="modalCover" class="w-full h-64 lg:h-full object-cover"/>
+      <div class="absolute inset-0 cover-overlay pointer-events-none"></div>
     </div>
 
-    <!-- CONTENT -->
-    <div class="flex-1 overflow-y-auto p-6 lg:p-10">
+    <!-- Detail pane -->
+    <div class="flex-1 modal-body p-6 lg:p-9">
 
-      <div class="flex justify-between items-start gap-6 mb-8">
-
+      <div class="flex justify-between items-start gap-4 mb-6">
         <div>
-
-          <h2
-            id="modalTitle"
-            class="text-4xl font-bold leading-tight"
-          ></h2>
-
-          <p
-            id="modalAuthor"
-            class="text-pink-300 text-lg mt-2"
-          ></p>
-
+          <h2 id="modalTitle" class="serif text-3xl font-bold leading-tight"></h2>
+          <p id="modalAuthor" class="text-base mt-2 font-medium" style="color:var(--pink)"></p>
         </div>
-
-        <button
-          onclick="closeModal()"
-          class="w-10 h-10 rounded-full button-secondary"
-        >
-          ✕
-        </button>
-
+        <button onclick="closeModal()" class="btn-ghost w-9 h-9 rounded-full flex items-center justify-center text-sm shrink-0">✕</button>
       </div>
 
-      <!-- TAGS -->
-      <div
-        id="modalTags"
-        class="flex flex-wrap gap-2 mb-8"
-      ></div>
+      <!-- Tags -->
+      <div id="modalTags" class="flex flex-wrap gap-2 mb-6"></div>
 
-      <!-- INFO -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-
-        <div class="card rounded-2xl p-4">
-          <p class="text-xs uppercase tracking-widest text-zinc-500 mb-2">
-            Year
-          </p>
-          <p id="modalYear" class="font-semibold"></p>
+      <!-- Info grid -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-7">
+        <div class="card rounded-xl p-3">
+          <p class="text-xs uppercase tracking-widest mb-1.5" style="color:var(--muted)">Year</p>
+          <p id="modalYear" class="font-semibold text-sm"></p>
         </div>
-
-        <div class="card rounded-2xl p-4">
-          <p class="text-xs uppercase tracking-widest text-zinc-500 mb-2">
-            Pages
-          </p>
-          <p id="modalPages" class="font-semibold"></p>
+        <div class="card rounded-xl p-3">
+          <p class="text-xs uppercase tracking-widest mb-1.5" style="color:var(--muted)">Pages</p>
+          <p id="modalPages" class="font-semibold text-sm"></p>
         </div>
-
-        <div class="card rounded-2xl p-4">
-          <p class="text-xs uppercase tracking-widest text-zinc-500 mb-2">
-            Language
-          </p>
-          <p id="modalLang" class="font-semibold"></p>
+        <div class="card rounded-xl p-3">
+          <p class="text-xs uppercase tracking-widest mb-1.5" style="color:var(--muted)">Language</p>
+          <p id="modalLang" class="font-semibold text-sm"></p>
         </div>
-
-        <div class="card rounded-2xl p-4">
-          <p class="text-xs uppercase tracking-widest text-zinc-500 mb-2">
-            Publisher
-          </p>
-          <p id="modalPub" class="font-semibold truncate"></p>
+        <div class="card rounded-xl p-3">
+          <p class="text-xs uppercase tracking-widest mb-1.5" style="color:var(--muted)">Publisher</p>
+          <p id="modalPub" class="font-semibold text-sm truncate"></p>
         </div>
-
       </div>
 
-      <!-- DESCRIPTION -->
-      <div class="mb-10">
-
-        <p
-          id="modalDesc"
-          class="text-zinc-400 leading-relaxed"
-        ></p>
-
+      <!-- Description -->
+      <div class="mb-7">
+        <p id="modalDesc" class="text-sm leading-relaxed" style="color:var(--muted)"></p>
       </div>
 
-      <!-- NOTES -->
-      <div class="mb-10">
-
-        <label class="block text-xs uppercase tracking-widest text-zinc-500 mb-4">
-          Notes
-        </label>
-
-        <textarea
-          id="personalNotes"
-          placeholder="Write notes..."
-          class="input w-full min-h-[160px] rounded-2xl p-5 resize-y"
-        ></textarea>
-
+      <!-- Notes -->
+      <div class="mb-7">
+        <label class="block text-xs uppercase tracking-widest mb-3" style="color:var(--muted)">My Notes</label>
+        <textarea id="personalNotes" placeholder="Write your thoughts about this book…" class="input w-full min-h-[120px] rounded-2xl p-4 resize-y text-sm"></textarea>
       </div>
 
-      <!-- CONTROLS -->
-      <div class="grid md:grid-cols-2 gap-8 border-t border-white/5 pt-8">
-
+      <!-- Rating + Shelf -->
+      <div class="grid md:grid-cols-2 gap-6 border-t pt-6" style="border-color:var(--border)">
         <div>
-
-          <label class="block text-xs uppercase tracking-widest text-zinc-500 mb-4">
-            Rating
-          </label>
-
+          <label class="block text-xs uppercase tracking-widest mb-3" style="color:var(--muted)">Rating</label>
           <div class="star-rating">
-
-            <input type="radio" name="stars" id="s5" value="5"/>
-            <label for="s5">★</label>
-
-            <input type="radio" name="stars" id="s4" value="4"/>
-            <label for="s4">★</label>
-
-            <input type="radio" name="stars" id="s3" value="3"/>
-            <label for="s3">★</label>
-
-            <input type="radio" name="stars" id="s2" value="2"/>
-            <label for="s2">★</label>
-
-            <input type="radio" name="stars" id="s1" value="1"/>
-            <label for="s1">★</label>
-
+            <input type="radio" name="stars" id="s5" value="5"/><label for="s5">★</label>
+            <input type="radio" name="stars" id="s4" value="4"/><label for="s4">★</label>
+            <input type="radio" name="stars" id="s3" value="3"/><label for="s3">★</label>
+            <input type="radio" name="stars" id="s2" value="2"/><label for="s2">★</label>
+            <input type="radio" name="stars" id="s1" value="1"/><label for="s1">★</label>
           </div>
-
         </div>
-
         <div>
-
-          <label class="block text-xs uppercase tracking-widest text-zinc-500 mb-4">
-            Shelf
-          </label>
-
-          <select
-            id="editFolder"
-            class="input w-full rounded-2xl p-3"
-          >
-            <option value="Reading">Reading</option>
-            <option value="Finished">Archived</option>
-            <option value="Wishlist">Wishlist</option>
+          <label class="block text-xs uppercase tracking-widest mb-3" style="color:var(--muted)">Shelf</label>
+          <select id="editFolder" class="input w-full rounded-xl p-3 text-sm">
+            <option value="Reading">📖 Reading</option>
+            <option value="Finished">🗂 Archived</option>
+            <option value="Wishlist">💫 Wishlist</option>
           </select>
-
         </div>
-
       </div>
 
-      <!-- ACTIONS -->
-      <div class="flex flex-col sm:flex-row gap-3 mt-10">
-
-        <button
-          onclick="saveChanges()"
-          class="button-primary flex-1 py-4 rounded-2xl"
-        >
-          Save Changes
-        </button>
-
-        <button
-          onclick="deleteBook()"
-          class="bg-red-500/10 border border-red-500/20 text-red-400 px-8 py-4 rounded-2xl hover:bg-red-500 hover:text-white transition"
-        >
-          Delete
-        </button>
-
+      <!-- Actions -->
+      <div class="flex flex-col sm:flex-row gap-3 mt-7">
+        <button onclick="saveChanges()" class="btn-primary flex-1 py-3.5 rounded-2xl text-sm">Save Changes</button>
+        <button onclick="deleteBook()" class="btn-ghost px-6 py-3.5 rounded-2xl text-sm" style="border-color:rgba(239,68,68,0.25);color:#f87171">Delete</button>
       </div>
 
     </div>
-
   </div>
-
 </div>
 
-<!-- TOAST -->
+
+<!-- ====================================================
+     SUPABASE CONFIG MODAL
+===================================================== -->
 <div
-  id="toast"
-  class="fixed bottom-5 right-5 bg-pink-300 text-black px-6 py-4 rounded-2xl font-semibold opacity-0 transition-all z-50"
-></div>
+  id="supabaseModal"
+  class="fixed inset-0 bg-black/75 backdrop-blur-md hidden items-center justify-center z-50 p-4"
+>
+  <div class="w-full max-w-lg card rounded-3xl p-7 modal-body">
 
+    <div class="flex justify-between items-center mb-5">
+      <h3 class="serif text-2xl">Connect Supabase</h3>
+      <button onclick="closeSupabaseModal()" class="btn-ghost w-9 h-9 rounded-full flex items-center justify-center text-sm">✕</button>
+    </div>
+
+    <p class="text-sm mb-5 leading-relaxed" style="color:var(--muted)">
+      Sync your library across devices by connecting a free
+      <a href="https://supabase.com" target="_blank" rel="noopener" style="color:var(--pink)">Supabase</a>
+      project. Your data is stored in your own database — OnLIB never sees it.
+    </p>
+
+    <!-- SQL instructions -->
+    <div class="card rounded-2xl p-4 mb-5">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-xs font-semibold" style="color:var(--muted)">1. Run this SQL in your Supabase SQL Editor:</p>
+        <button onclick="copySql()" class="btn-ghost text-xs px-3 py-1 rounded-lg" id="copyBtn">Copy</button>
+      </div>
+      <pre id="sqlBlock">create table if not exists onlib_books (
+  id          text primary key,
+  user_id     text not null,
+  title       text,
+  author      text,
+  cover       text,
+  description text,
+  tags        text[],
+  pages       integer,
+  language    text,
+  year        text,
+  publisher   text,
+  rating      integer default 5,
+  folder      text default 'Reading',
+  notes       text,
+  created_at  timestamptz default now()
+);
+
+create table if not exists onlib_profiles (
+  user_id    text primary key,
+  name       text,
+  bio        text,
+  pfp        text,
+  updated_at timestamptz default now()
+);
+
+-- Disable RLS for personal use
+alter table onlib_books    disable row level security;
+alter table onlib_profiles disable row level security;</pre>
+    </div>
+
+    <!-- Credentials -->
+    <p class="text-xs font-semibold mb-3" style="color:var(--muted)">2. Paste your project credentials:</p>
+    <div class="space-y-3 mb-5">
+      <div>
+        <label class="block text-xs mb-1.5" style="color:var(--muted)">Project URL</label>
+        <input type="url" id="sbUrl" placeholder="https://xxxxxxxxxxxx.supabase.co" class="input w-full rounded-xl px-4 py-3 text-sm"/>
+      </div>
+      <div>
+        <label class="block text-xs mb-1.5" style="color:var(--muted)">Anon / Public Key</label>
+        <input type="text" id="sbKey" placeholder="eyJhbGci…" class="input w-full rounded-xl px-4 py-3 text-sm font-mono"/>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button onclick="connectSupabase()" class="btn-primary flex-1 py-3 rounded-xl text-sm">Connect & Sync</button>
+      <button onclick="disconnectSupabase()" class="btn-ghost px-5 py-3 rounded-xl text-sm" style="color:var(--muted)">Disconnect</button>
+    </div>
+
+    <p id="sbStatus" class="text-xs text-center mt-4" style="color:var(--muted); min-height:1.2em"></p>
+  </div>
+</div>
+
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-5 right-5 px-5 py-3.5 rounded-2xl font-semibold text-sm z-[60] opacity-0"
+  style="background:var(--pink);color:#1a0a22;transform:translateY(6px)">
+</div>
+
+
+<!-- ====================================================
+     SCRIPT
+===================================================== -->
 <script>
+// ─── State ─────────────────────────────────────────────────────────────────
+let myLibrary      = [];
+let profile        = { name: '', bio: '', pfp: '' };
+let currentEditId  = null;
+let currentFolder  = 'All';
+let sbClient       = null;
+let toastTimer     = null;
 
+// Stable anonymous user ID (no auth required)
+let userId = localStorage.getItem('onlib_uid');
+if (!userId) {
+  userId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+  localStorage.setItem('onlib_uid', userId);
+}
 
-  
-let myLibrary = JSON.parse(localStorage.getItem('myOnLIBVault')) || [];
+// ─── Boot ───────────────────────────────────────────────────────────────────
+async function init() {
+  // Load local data first → instant render
+  const rawProfile = localStorage.getItem('onLIBProfile');
+  const rawLib     = localStorage.getItem('myOnLIBVault');
 
-let profile = JSON.parse(localStorage.getItem('onLIBProfile')) || {
-  name: 'New User',
-  bio: '',
-  pfp: ''
-};
+  if (rawProfile) profile    = JSON.parse(rawProfile);
+  if (rawLib)     myLibrary  = JSON.parse(rawLib);
 
-let currentEditingId = null;
-let currentFolder = 'All';
+  initProfile();
+  renderLibrary();
 
+  // Attempt Supabase reconnect if previously configured
+  const rawSb = localStorage.getItem('onlib_sb_config');
+  if (rawSb) {
+    try {
+      const { url, key } = JSON.parse(rawSb);
+      await initSupabase(url, key, false);
+    } catch { /* silent */ }
+  }
+}
+
+// ─── Profile ────────────────────────────────────────────────────────────────
 function initProfile() {
   document.getElementById('userName').value = profile.name || '';
-  document.getElementById('userBio').value = profile.bio || '';
-
-  if(profile.pfp){
-    document.getElementById('pfpImg').src = profile.pfp;
-  }
+  document.getElementById('userBio').value  = profile.bio  || '';
+  if (profile.pfp) document.getElementById('pfpImg').src = profile.pfp;
 }
 
 function saveProfile() {
   profile.name = document.getElementById('userName').value;
-  profile.bio = document.getElementById('userBio').value;
+  profile.bio  = document.getElementById('userBio').value;
+  saveProfileLocal();
+  upsertProfileToSupabase();
+}
 
-  localStorage.setItem(
-    'onLIBProfile',
-    JSON.stringify(profile)
-  );
+function saveProfileLocal() {
+  localStorage.setItem('onLIBProfile', JSON.stringify(profile));
 }
 
 function uploadPFP(input) {
-  if(!input.files || !input.files[0]) return;
-
+  if (!input.files?.[0]) return;
   const reader = new FileReader();
-
-  reader.onload = (e) => {
+  reader.onload = e => {
     profile.pfp = e.target.result;
-
     document.getElementById('pfpImg').src = e.target.result;
-
     saveProfile();
   };
-
   reader.readAsDataURL(input.files[0]);
 }
 
+// ─── Supabase ────────────────────────────────────────────────────────────────
+async function initSupabase(url, key, showFeedback = true) {
+  try {
+    sbClient = supabase.createClient(url, key);
+
+    // Ping to verify credentials
+    const { error } = await sbClient.from('onlib_books').select('id').limit(1);
+    if (error) throw error;
+
+    localStorage.setItem('onlib_sb_config', JSON.stringify({ url, key }));
+    setSyncState('connected');
+    if (showFeedback) showToast('✓ Connected to Supabase');
+
+    await pullFromSupabase();
+    return true;
+  } catch (err) {
+    sbClient = null;
+    setSyncState('disconnected');
+    if (showFeedback) showToast('Connection failed — check your credentials');
+    console.error('Supabase init error:', err);
+    return false;
+  }
+}
+
+async function pullFromSupabase() {
+  if (!sbClient) return;
+  setSyncState('syncing');
+
+  try {
+    const { data, error } = await sbClient
+      .from('onlib_books')
+      .select('*')
+      .eq('user_id', userId);
+
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      const remoteIds  = new Set(data.map(r => r.id));
+      const localOnly  = myLibrary.filter(b => !remoteIds.has(b.id));
+
+      // Map remote rows → local schema
+      myLibrary = data.map(mapRemoteBook);
+
+      // Push local-only books to remote
+      for (const book of localOnly) {
+        await upsertBookToSupabase(book);
+        myLibrary.push(book);
+      }
+    } else if (myLibrary.length > 0) {
+      // First sync — push everything up
+      for (const book of myLibrary) {
+        await upsertBookToSupabase(book);
+      }
+    }
+
+    // Profile
+    const { data: pd } = await sbClient
+      .from('onlib_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (pd) {
+      profile = { name: pd.name || '', bio: pd.bio || '', pfp: pd.pfp || '' };
+      saveProfileLocal();
+      initProfile();
+    } else {
+      await upsertProfileToSupabase();
+    }
+
+    saveLocal();
+    renderLibrary();
+    setSyncState('connected');
+  } catch (err) {
+    setSyncState('disconnected');
+    console.error('Pull error:', err);
+  }
+}
+
+function mapRemoteBook(row) {
+  return {
+    id:        row.id,
+    title:     row.title      || 'Untitled',
+    author:    row.author     || 'Unknown',
+    cover:     row.cover      || '',
+    desc:      row.description|| '',
+    tags:      row.tags       || [],
+    pages:     row.pages      || '—',
+    language:  row.language   || '—',
+    year:      row.year       || '—',
+    publisher: row.publisher  || '—',
+    rating:    row.rating     || 5,
+    folder:    row.folder     || 'Reading',
+    notes:     row.notes      || '',
+  };
+}
+
+async function upsertBookToSupabase(book) {
+  if (!sbClient) return;
+  try {
+    const { error } = await sbClient.from('onlib_books').upsert({
+      id:          book.id,
+      user_id:     userId,
+      title:       book.title,
+      author:      book.author,
+      cover:       book.cover,
+      description: book.desc,
+      tags:        book.tags,
+      pages:       typeof book.pages === 'number' ? book.pages : null,
+      language:    book.language,
+      year:        book.year,
+      publisher:   book.publisher,
+      rating:      book.rating,
+      folder:      book.folder,
+      notes:       book.notes,
+    });
+    if (error) throw error;
+  } catch (err) { console.error('Upsert error:', err); }
+}
+
+async function deleteBookFromSupabase(id) {
+  if (!sbClient) return;
+  try {
+    await sbClient.from('onlib_books').delete().eq('id', id).eq('user_id', userId);
+  } catch (err) { console.error('Delete error:', err); }
+}
+
+async function upsertProfileToSupabase() {
+  if (!sbClient) return;
+  try {
+    await sbClient.from('onlib_profiles').upsert({
+      user_id:    userId,
+      name:       profile.name,
+      bio:        profile.bio,
+      pfp:        profile.pfp,
+      updated_at: new Date().toISOString(),
+    });
+  } catch (err) { console.error('Profile upsert error:', err); }
+}
+
+function setSyncState(state) {
+  const dot   = document.getElementById('syncDot');
+  const label = document.getElementById('syncLabel');
+  dot.className = 'sync-dot ' + state;
+  label.textContent = state === 'connected' ? 'Synced' : state === 'syncing' ? 'Syncing…' : 'Sync';
+}
+
+async function connectSupabase() {
+  const url = document.getElementById('sbUrl').value.trim();
+  const key = document.getElementById('sbKey').value.trim();
+  const statusEl = document.getElementById('sbStatus');
+
+  if (!url || !key) { statusEl.textContent = 'Please enter both URL and key.'; return; }
+
+  statusEl.textContent = 'Connecting…';
+  statusEl.style.color = 'var(--muted)';
+
+  const ok = await initSupabase(url, key, true);
+
+  if (ok) {
+    statusEl.textContent = '✓ Connected successfully!';
+    statusEl.style.color = 'var(--green)';
+    setTimeout(closeSupabaseModal, 1600);
+  } else {
+    statusEl.textContent = '✗ Failed — verify URL and anon key.';
+    statusEl.style.color = '#f87171';
+  }
+}
+
+function disconnectSupabase() {
+  sbClient = null;
+  localStorage.removeItem('onlib_sb_config');
+  setSyncState('disconnected');
+  const el = document.getElementById('sbStatus');
+  el.textContent = 'Disconnected from Supabase.';
+  el.style.color = 'var(--muted)';
+}
+
+function openSupabaseModal() {
+  const raw = localStorage.getItem('onlib_sb_config');
+  if (raw) {
+    const { url, key } = JSON.parse(raw);
+    document.getElementById('sbUrl').value = url;
+    document.getElementById('sbKey').value = key;
+  }
+  document.getElementById('sbStatus').textContent = '';
+  showModal('supabaseModal');
+}
+
+function closeSupabaseModal() { hideModal('supabaseModal'); }
+
+function copySql() {
+  const sql = document.getElementById('sqlBlock').textContent;
+  navigator.clipboard?.writeText(sql).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1800);
+  });
+}
+
+// ─── Search ──────────────────────────────────────────────────────────────────
 async function searchBooks() {
   const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
 
-  if(!q) return;
+  const sec  = document.getElementById('searchSection');
+  const grid = document.getElementById('searchResults');
 
-  const resDiv = document.getElementById('searchResults');
+  sec.classList.remove('hidden');
+  grid.innerHTML = skeletonGrid(6);
 
-  document.getElementById('searchSection').classList.remove('hidden');
-
-  resDiv.innerHTML = `
-    <div class="col-span-full py-10 text-center text-zinc-500">
-      Searching...
-    </div>
-  `;
-
-  try{
-    const res = await fetch(
-      `https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=10`
-    );
-
+  try {
+    const res  = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=12`);
     const data = await res.json();
 
-    resDiv.innerHTML = '';
+    grid.innerHTML = '';
 
-    if(!data.docs?.length){
-      resDiv.innerHTML = `
-        <div class="col-span-full py-10 text-center text-zinc-500">
-          No results found.
-        </div>
-      `;
+    if (!data.docs?.length) {
+      grid.innerHTML = emptyMsg('No results found.');
       return;
     }
 
     data.docs.forEach(book => {
-
       const cover = book.cover_i
         ? `https://covers.openlibrary.org/b/id/${book.cover_i}-L.jpg`
-        : 'https://via.placeholder.com/300x450/18121d/f8f4fa?text=No+Cover';
+        : `https://placehold.co/300x450/1d1524/f97cc4?text=${encodeURIComponent((book.title || '?').slice(0, 10))}`;
 
-      const safeTitle = (book.title || 'Untitled').replace(/'/g, '');
-      const safeAuthor = (
-        book.author_name?.[0] || 'Unknown'
-      ).replace(/'/g, '');
+      const div = document.createElement('div');
+      div.className = 'search-card group cursor-pointer';
+      div.dataset.key    = book.key;
+      div.dataset.cover  = cover;
+      div.dataset.title  = book.title || 'Untitled';
+      div.dataset.author = book.author_name?.[0] || 'Unknown';
 
-      resDiv.innerHTML += `
-        <div
-          onclick="addBook('${book.key}', '${cover}', '${safeTitle}', '${safeAuthor}')"
-          class="group cursor-pointer"
-        >
-
-          <div class="relative overflow-hidden aspect-[2/3] rounded-2xl card">
-
-            <img
-              src="${cover}"
-              class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-            />
-
+      div.innerHTML = `
+        <div class="relative overflow-hidden aspect-[2/3] rounded-xl card">
+          <img src="${cover}" alt="${sanitize(book.title)}"
+               class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+               loading="lazy"
+               onerror="this.src='https://placehold.co/300x450/1d1524/f97cc4?text=?'"/>
+          <div class="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+            <span class="text-sm font-bold" style="color:var(--pink)">+ Add</span>
           </div>
-
-          <div class="mt-3">
-
-            <h3 class="font-semibold text-sm truncate">
-              ${safeTitle}
-            </h3>
-
-            <p class="text-xs text-zinc-500 truncate mt-1">
-              ${safeAuthor}
-            </p>
-
-          </div>
-
+        </div>
+        <div class="mt-2.5">
+          <h3 class="font-semibold text-xs truncate">${sanitize(book.title || 'Untitled')}</h3>
+          <p class="text-xs truncate mt-0.5" style="color:var(--muted)">${sanitize(book.author_name?.[0] || 'Unknown')}</p>
         </div>
       `;
+
+      grid.appendChild(div);
     });
 
-  } catch(error){
+    // Safe event delegation — no onclick string injection
+    grid.onclick = e => {
+      const card = e.target.closest('.search-card');
+      if (card) addBook(card.dataset.key, card.dataset.cover, card.dataset.title, card.dataset.author);
+    };
 
-    resDiv.innerHTML = `
-      <div class="col-span-full py-10 text-center text-red-400">
-        Failed to load results.
-      </div>
-    `;
+  } catch {
+    grid.innerHTML = emptyMsg('Search failed. Check your connection.', '#f87171');
   }
 }
 
+// ─── Add Book ────────────────────────────────────────────────────────────────
 async function addBook(key, cover, title, author) {
+  showToast('Adding…');
 
-  showToast('Adding book...');
+  try {
+    // Work data (description, subjects)
+    const workRes  = await fetch(`https://openlibrary.org${key}.json`);
+    const work     = await workRes.json();
 
-  try{
+    // Edition data (pages, publisher, language) — works often lack these
+    let pages     = null;
+    let publisher = '—';
+    let language  = 'EN';
+    try {
+      const edRes  = await fetch(`https://openlibrary.org${key}/editions.json?limit=1`);
+      const edData = await edRes.json();
+      const ed     = edData.entries?.[0];
+      if (ed) {
+        pages     = ed.number_of_pages || null;
+        publisher = ed.publishers?.[0]  || '—';
+        language  = ed.languages?.[0]?.key?.replace('/languages/', '').toUpperCase() || 'EN';
+      }
+    } catch { /* edition fetch is best-effort */ }
 
-    const workRes = await fetch(`https://openlibrary.org${key}.json`);
-    const work = await workRes.json();
+    const desc = typeof work.description === 'string'
+      ? work.description
+      : work.description?.value || 'No description available.';
 
     const newBook = {
-      id: Date.now(),
-      title,
-      author,
+      id:        genId(),
+      title:     title  || 'Untitled',
+      author:    author || 'Unknown',
       cover,
-
-      desc:
-        typeof work.description === 'string'
-          ? work.description
-          : work.description?.value || 'No description available.',
-
-      tags: Array.isArray(work.subjects)
-        ? work.subjects.slice(0, 4)
-        : ['General'],
-
-      pages:
-        work.number_of_pages ||
-        Math.floor(Math.random() * 300) + 100,
-
-      language: 'EN',
-
-      year:
-        work.first_publish_date ||
-        'Unknown',
-
-      publisher:
-        work.publishers?.[0] ||
-        'Unknown',
-
-      rating: 5,
-      folder: 'Reading',
-      notes: ''
+      desc,
+      tags:      Array.isArray(work.subjects) ? work.subjects.slice(0, 6) : [],
+      pages:     pages || work.number_of_pages || '—',
+      language,
+      year:      work.first_publish_date || '—',
+      publisher,
+      rating:    5,
+      folder:    'Reading',
+      notes:     '',
     };
 
     myLibrary.push(newBook);
+    saveLocal();
+    await upsertBookToSupabase(newBook);
 
-    save();
-
+    document.getElementById('searchSection').classList.add('hidden');
+    document.getElementById('searchInput').value = '';
     openBook(newBook.id);
+    showToast('✓ Added to library!');
 
-    document
-      .getElementById('searchSection')
-      .classList.add('hidden');
-
-  } catch(error){
-
+  } catch (err) {
+    console.error(err);
     showToast('Failed to add book');
-
   }
 }
 
-function openBook(id){
-
-  currentEditingId = id;
-
+// ─── Book Modal ──────────────────────────────────────────────────────────────
+function openBook(id) {
+  currentEditId = id;
   const b = myLibrary.find(book => book.id === id);
+  if (!b) return;
 
-  if(!b) return;
+  // Use textContent everywhere — safe against XSS
+  document.getElementById('modalTitle').textContent  = b.title     || 'Untitled';
+  document.getElementById('modalAuthor').textContent = b.author    || 'Unknown';
+  document.getElementById('modalCover').src          = b.cover     || '';
+  document.getElementById('modalCover').alt          = b.title     || '';
+  document.getElementById('modalDesc').textContent   = b.desc      || '';
+  document.getElementById('modalPages').textContent  = b.pages     || '—';
+  document.getElementById('modalYear').textContent   = b.year      || '—';
+  document.getElementById('modalLang').textContent   = b.language  || '—';
+  document.getElementById('modalPub').textContent    = b.publisher || '—';
+  document.getElementById('editFolder').value        = b.folder    || 'Reading';
+  document.getElementById('personalNotes').value     = b.notes     || '';
 
-  document.getElementById('modalTitle').innerText = b.title || 'Untitled';
-  document.getElementById('modalAuthor').innerText = b.author || 'Unknown';
-  document.getElementById('modalCover').src = b.cover || '';
-  document.getElementById('modalDesc').innerText = b.desc || '';
-  document.getElementById('modalPages').innerText = b.pages || '—';
-  document.getElementById('modalYear').innerText = b.year || '—';
-  document.getElementById('modalLang').innerText = b.language || '—';
-  document.getElementById('modalPub').innerText = b.publisher || '—';
-
-  document.getElementById('editFolder').value =
-    b.folder || 'Reading';
-
-  document.getElementById('personalNotes').value =
-    b.notes || '';
-
-  const tagContainer = document.getElementById('modalTags');
-
-  tagContainer.innerHTML = '';
-
-  (b.tags || ['General']).forEach(tag => {
-
-    tagContainer.innerHTML += `
-      <span class="px-3 py-2 rounded-full bg-pink-400/10 text-pink-300 text-xs">
-        ${tag}
-      </span>
-    `;
+  // Tags — safe createElement
+  const tagCont = document.getElementById('modalTags');
+  tagCont.innerHTML = '';
+  (b.tags || []).forEach(tag => {
+    const span = document.createElement('span');
+    span.className   = 'px-3 py-1.5 rounded-full text-xs font-medium';
+    span.style.cssText = 'background:rgba(249,124,196,0.1);color:var(--pink)';
+    span.textContent = tag;
+    tagCont.appendChild(span);
   });
 
-  const selectedStar = document.getElementById(`s${b.rating || 5}`);
+  // Stars — reset then set
+  document.querySelectorAll('input[name="stars"]').forEach(r => r.checked = false);
+  const star = document.getElementById(`s${b.rating || 5}`);
+  if (star) star.checked = true;
 
-  if(selectedStar){
-    selectedStar.checked = true;
-  }
-
-  document.getElementById('bookModal').classList.remove('hidden');
-  document.getElementById('bookModal').classList.add('flex');
+  showModal('bookModal');
 }
 
-function rollRandom(){
+function closeModal() { hideModal('bookModal'); }
 
-  if(!myLibrary.length){
-    showToast('Library is empty');
-    return;
-  }
+async function saveChanges() {
+  const idx = myLibrary.findIndex(b => b.id === currentEditId);
+  if (idx === -1) return;
 
-  const randomBook =
-    myLibrary[Math.floor(Math.random() * myLibrary.length)];
+  myLibrary[idx].folder = document.getElementById('editFolder').value;
+  myLibrary[idx].notes  = document.getElementById('personalNotes').value;
 
-  openBook(randomBook.id);
-}
+  const checked = document.querySelector('input[name="stars"]:checked');
+  myLibrary[idx].rating = checked ? Number(checked.value) : 5;
 
-function saveChanges(){
-
-  const idx = myLibrary.findIndex(
-    b => b.id === currentEditingId
-  );
-
-  if(idx === -1) return;
-
-  myLibrary[idx].folder =
-    document.getElementById('editFolder').value;
-
-  myLibrary[idx].notes =
-    document.getElementById('personalNotes').value;
-
-  const checkedStar =
-    document.querySelector('input[name="stars"]:checked');
-
-  myLibrary[idx].rating =
-    checkedStar
-      ? Number(checkedStar.value)
-      : 5;
-
-  save();
-
+  saveLocal();
+  await upsertBookToSupabase(myLibrary[idx]);
   closeModal();
-
-  showToast('Saved');
+  showToast('✓ Saved');
 }
 
-function renderLibrary(){
+async function deleteBook() {
+  if (!confirm('Remove this book from your library?')) return;
+  const id = currentEditId;
+  myLibrary = myLibrary.filter(b => b.id !== id);
+  saveLocal();
+  await deleteBookFromSupabase(id);
+  closeModal();
+  showToast('Book removed');
+}
 
-  const grid = document.getElementById('libraryGrid');
+// ─── Library render ──────────────────────────────────────────────────────────
+function renderLibrary() {
+  const grid  = document.getElementById('libraryGrid');
+  const sort  = document.getElementById('sortSelect')?.value || 'newest';
 
-  const filtered =
-    currentFolder === 'All'
-      ? myLibrary
-      : myLibrary.filter(
-          b => b.folder === currentFolder
-        );
+  let list = currentFolder === 'All'
+    ? [...myLibrary]
+    : myLibrary.filter(b => b.folder === currentFolder);
+
+  switch (sort) {
+    case 'oldest': /* already oldest-first if unmodified; reverse for newest-first */ break;
+    case 'title':  list.sort((a, b) => (a.title || '').localeCompare(b.title || '')); break;
+    case 'rating': list.sort((a, b) => (b.rating || 0) - (a.rating || 0)); break;
+    default: list.reverse(); break; // newest = reverse insertion order
+  }
 
   grid.innerHTML = '';
 
-  if(!filtered.length){
-
-    grid.innerHTML = `
-      <div class="col-span-full text-center py-20 text-zinc-500">
-        No books yet.
-      </div>
-    `;
-
+  if (!list.length) {
+    grid.innerHTML = emptyMsg('No books here yet — search above to add some!');
+    updateStats();
     return;
   }
 
-  filtered.forEach(b => {
+  list.forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'book-card group cursor-pointer';
+    div.dataset.bookId = b.id;
 
-    grid.innerHTML += `
-      <div
-        onclick="openBook(${b.id})"
-        class="group cursor-pointer"
-      >
+    const stars = b.rating ? '★'.repeat(b.rating) : '';
 
-        <div class="relative overflow-hidden aspect-[2/3] rounded-2xl card">
-
-          <img
-            src="${b.cover}"
-            class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-          />
-
-          <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition flex items-end p-4 overlay">
-
-            <span class="text-xs uppercase tracking-widest font-semibold">
-              Open
-            </span>
-
-          </div>
-
+    div.innerHTML = `
+      <div class="relative overflow-hidden aspect-[2/3] rounded-xl card">
+        <img src="${sanitize(b.cover)}" alt="${sanitize(b.title)}"
+             class="w-full h-full object-cover group-hover:scale-105 transition duration-500 ease-out"
+             loading="lazy"
+             onerror="this.src='https://placehold.co/300x450/1d1524/f97cc4?text=?'"/>
+        <div class="absolute inset-0 cover-overlay opacity-0 group-hover:opacity-100 transition flex items-end p-3">
+          <span class="text-xs uppercase tracking-widest font-bold" style="color:var(--text)">Open</span>
         </div>
-
-        <div class="mt-3">
-
-          <h3 class="font-semibold text-sm truncate">
-            ${b.title}
-          </h3>
-
-          <p class="text-xs text-zinc-500 mt-1 truncate">
-            ${b.author}
-          </p>
-
-        </div>
-
+        ${stars ? `<div class="absolute top-2 right-2 rounded-full px-2 py-0.5 text-xs" style="background:rgba(0,0,0,0.65);color:var(--pink)">${stars}</div>` : ''}
+      </div>
+      <div class="mt-2.5">
+        <h3 class="font-semibold text-xs truncate">${sanitize(b.title || 'Untitled')}</h3>
+        <p class="text-xs truncate mt-0.5" style="color:var(--muted)">${sanitize(b.author || '')}</p>
       </div>
     `;
+    grid.appendChild(div);
   });
+
+  // Single delegated listener (replace old one)
+  grid.onclick = e => {
+    const card = e.target.closest('.book-card');
+    if (card) openBook(card.dataset.bookId);
+  };
+
+  document.getElementById('folderSubtitle').textContent =
+    `${list.length} book${list.length !== 1 ? 's' : ''}`;
+
+  updateStats();
 }
 
-function setFolder(folder){
+function updateStats() {
+  document.getElementById('statTotal').textContent   = myLibrary.length;
+  document.getElementById('statReading').textContent = myLibrary.filter(b => b.folder === 'Reading').length;
+  document.getElementById('statDone').textContent    = myLibrary.filter(b => b.folder === 'Finished').length;
+}
 
+function setFolder(folder) {
   currentFolder = folder;
 
-  document.getElementById('folderTitle').innerText =
-    folder;
+  const labels = { All: 'Library', Reading: 'Reading', Finished: 'Archived', Wishlist: 'Wishlist' };
+  document.getElementById('folderTitle').textContent = labels[folder] || folder;
 
-  renderLibrary();
-}
-
-function save(){
-
-  localStorage.setItem(
-    'myOnLIBVault',
-    JSON.stringify(myLibrary)
+  document.querySelectorAll('.nav-btn').forEach(btn =>
+    btn.classList.toggle('active', btn.dataset.folder === folder)
   );
 
   renderLibrary();
 }
 
-function closeModal(){
-
-  document.getElementById('bookModal').classList.remove('flex');
-
-  document.getElementById('bookModal').classList.add('hidden');
+function rollRandom() {
+  if (!myLibrary.length) { showToast('Library is empty'); return; }
+  openBook(myLibrary[Math.floor(Math.random() * myLibrary.length)].id);
 }
 
-function showToast(message){
-
-  const toast = document.getElementById('toast');
-
-  toast.innerText = message;
-
-  toast.style.opacity = 1;
-  toast.style.transform = 'translateY(0px)';
-
-  setTimeout(() => {
-
-    toast.style.opacity = 0;
-    toast.style.transform = 'translateY(10px)';
-
-  }, 2200);
+// ─── Storage ─────────────────────────────────────────────────────────────────
+function saveLocal() {
+  localStorage.setItem('myOnLIBVault', JSON.stringify(myLibrary));
+  renderLibrary();
 }
 
-function deleteBook(){
-
-  myLibrary = myLibrary.filter(
-    b => b.id !== currentEditingId
-  );
-
-  save();
-
-  closeModal();
-
-  showToast('Deleted');
+// ─── UI helpers ──────────────────────────────────────────────────────────────
+function showModal(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('hidden');
+  el.classList.add('flex');
 }
 
-initProfile();
-renderLibrary();
+function hideModal(id) {
+  const el = document.getElementById(id);
+  el.classList.add('hidden');
+  el.classList.remove('flex');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.opacity   = '1';
+  t.style.transform = 'translateY(0)';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    t.style.opacity   = '0';
+    t.style.transform = 'translateY(6px)';
+  }, 2400);
+}
+
+function sanitize(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function genId() {
+  return (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : 'id_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+}
+
+function skeletonGrid(n) {
+  return Array(n).fill(0).map(() => `
+    <div>
+      <div class="skeleton aspect-[2/3] rounded-xl"></div>
+      <div class="skeleton h-3 mt-3 rounded w-3/4"></div>
+      <div class="skeleton h-2 mt-2 rounded w-1/2"></div>
+    </div>`).join('');
+}
+
+function emptyMsg(text, color = 'var(--muted)') {
+  return `<div class="col-span-full py-16 text-center text-sm" style="color:${color}">${sanitize(text)}</div>`;
+}
+
+// ─── Backdrop close ───────────────────────────────────────────────────────────
+['bookModal','supabaseModal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => {
+    if (e.target.id === id) hideModal(id);
+  });
+});
+
+// ─── Keyboard ────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    hideModal('bookModal');
+    hideModal('supabaseModal');
+  }
+});
+
+// ─── Boot ────────────────────────────────────────────────────────────────────
+init();
 </script>
-
 </body>
 </html>
